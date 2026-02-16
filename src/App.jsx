@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Info, Calculator, ChevronDown } from 'lucide-react';
+import { Info, Calculator, ChevronDown, CheckCircle, X } from 'lucide-react';
 
 /**
  * MATH UTILITIES (Gamma, Chi-Square PDF/CDF/Inverse)
@@ -56,52 +56,35 @@ const PROBLEM_BANK = [
   {
     field: "Manufacturing",
     text: "A precision parts manufacturer claims the standard deviation of rod diameters is 0.02 mm. A quality inspector suspects the variability is actually higher. They take a random sample of 25 rods and find a sample standard deviation of 0.028 mm.",
-    task: "Conduct a hypothesis test at α = 0.05 to determine if the population standard deviation is greater than 0.02 mm."
+    task: "Conduct a hypothesis test at α = 0.05 to determine if the population standard deviation is greater than 0.02 mm.",
+    tails: "right",
+    testStatType: "chi-squared",
+    expectedTestStat: 47.04,
+    expectedH0: { op: "=", val: 0.02 },
+    expectedHa: { op: ">", val: 0.02 },
+    expectedDecision: "reject"
   },
   {
-    field: "Biology",
-    text: "A biologist studying honey bee wing lengths notes that previous research cites a variance of 0.16 mm². She suspects environmental factors have increased this variance. She measures a sample of 40 bees and calculates a sample variance of 0.25 mm².",
-    task: "Test the claim that the population variance is greater than 0.16 mm² at the 0.01 significance level."
+    field: "Hydrology",
+    text: "Stream flow measurements at a gauging station have historically shown a variance of 144 (m³/s)². After installing a new measurement system, 26 readings show a sample variance of 89 (m³/s)², and engineers worry the sensors may be malfunctioning.",
+    task: "Test whether the variance differs from 144 at the 0.05 significance level.",
+    tails: "both",
+    testStatType: "chi-squared",
+    expectedTestStat: 15.4514,
+    expectedH0: { op: "=", val: 144 },
+    expectedHa: { op: "≠", val: 144 },
+    expectedDecision: "reject"
   },
   {
-    field: "Medicine",
-    text: "A pharmaceutical company produces 500mg tablets. They state that the standard deviation of the active ingredient is 4 mg. A regulator tests a sample of 31 tablets and finds a sample standard deviation of 6.2 mg.",
-    task: "Use a significance level of 0.05 to determine if the dosage is more variable than the company claims."
-  },
-  {
-    field: "Engineering",
-    text: "An engineering firm specifies that the variance in the tensile strength of steel cables must be 100 psi². A random test of 15 cables results in a sample variance of 165 psi².",
-    task: "Determine if there is enough evidence at α = 0.05 to conclude the variance exceeds 100 psi²."
-  },
-  {
-    field: "Food Science",
-    text: "A bottling plant claims the variance in the volume of soda per bottle is 0.04 oz². A consumer group suspects the filling machine is inconsistent and tests 20 bottles, finding a sample variance of 0.08 oz².",
-    task: "Perform a hypothesis test to see if the population variance is greater than 0.04 at α = 0.10."
-  },
-  {
-    field: "Sports Science",
-    text: "A trainer claims the standard deviation of reaction times for elite sprinters is 0.012 seconds. A researcher measures 16 sprinters and finds a sample standard deviation of 0.018 seconds.",
-    task: "Test the claim that the standard deviation is actually higher than 0.012 seconds using α = 0.05."
-  },
-  {
-    field: "Environmental Science",
-    text: "Hydrologists claim the standard deviation of pH levels in a specific lake is 0.15. After a heavy rainfall, they sample 24 locations and find a sample standard deviation of 0.22.",
-    task: "Test if the rainfall increased the variability of pH levels at a 5% significance level."
-  },
-  {
-    field: "Aeronautics",
-    text: "A jet engine nozzle is designed for a fuel flow variance of 0.09 (L/s)². Engineers test a batch of 12 nozzles and find a sample variance of 0.18 (L/s)².",
-    task: "Determine if the manufacturing process has more variability than the design spec allows at α = 0.01."
-  },
-  {
-    field: "Pharmacology",
-    text: "A researcher expects the standard deviation of heart rate response to a new drug to be 10 bpm. In a clinical trial of 50 patients, the sample standard deviation is found to be 14 bpm.",
-    task: "Test the hypothesis that the population standard deviation is greater than 10 bpm at α = 0.05."
-  },
-  {
-    field: "Agriculture",
-    text: "An organic farm claims the variance in the weight of their premium oranges is 16 g². A grocer tests a sample of 28 oranges and finds a sample variance of 29 g².",
-    task: "Test the claim that the population variance is greater than 16 g² at the 0.05 significance level."
+    field: "Market Research",
+    text: "Customer satisfaction scores typically have a standard deviation of 12 points. After a new product launch, a company surveys 35 customers and finds a standard deviation of 10 points—unusually low variation that might indicate survey bias or limited product appeal to a narrow demographic.",
+    task: "Test at α = 0.10 whether the population standard deviation is less than 12 points.",
+    tails: "left",
+    testStatType: "chi-squared",
+    expectedTestStat: 23.611,
+    expectedH0: { op: "=", val: 12 },
+    expectedHa: { op: "<", val: 12 },
+    expectedDecision: "fail"
   }
 ];
 
@@ -111,20 +94,17 @@ const App = () => {
   const [s, setS] = useState(1);
   const [sigma, setSigma] = useState(1);
   const [testStat, setTestStat] = useState(0);
-  
-  // Initial states for CV and Area are now cleared
   const [cvLeft, setCvLeft] = useState("");
   const [areaLeft, setAreaLeft] = useState("");
   const [cvRight, setCvRight] = useState("");
   const [areaRight, setAreaRight] = useState("");
-
   const [h0Op, setH0Op] = useState('=');
   const [h1Op, setH1Op] = useState('>');
-
+  const [decision, setDecision] = useState(null);
   const [selectedProblem, setSelectedProblem] = useState(null);
+  const [showSubmitModal, setShowSubmitModal] = useState(false);
 
   const canvasRef = useRef(null);
-
   const noSpinClass = "[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none";
 
   useEffect(() => {
@@ -189,7 +169,6 @@ const App = () => {
     const height = canvas.height;
 
     ctx.clearRect(0, 0, width, height);
-    
     const xMax = MathUtils.ppf(0.9995, df);
     const modeX = df >= 2 ? df - 2 : 0.2;
     const peakY = MathUtils.pdf(modeX, df);
@@ -290,7 +269,25 @@ const App = () => {
   }, [cvLeft, cvRight, df, testStat, areaLeft, areaRight, n, s, sigma, inputMode]);
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 font-sans text-gray-800">
+    <div className="min-h-screen bg-gray-50 p-4 font-sans text-gray-800 relative">
+      
+      {/* SUCCESS MODAL */}
+      {showSubmitModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+            <div className="bg-white p-8 rounded-3xl shadow-2xl border border-gray-100 flex flex-col items-center gap-4 animate-in fade-in zoom-in duration-200">
+                <CheckCircle className="w-16 h-16 text-emerald-500" />
+                <h2 className="text-2xl font-bold">Problem Completed</h2>
+                <p className="text-gray-500">Your hypothesis test has been submitted.</p>
+                <button 
+                    onClick={() => setShowSubmitModal(false)}
+                    className="mt-4 px-6 py-2 bg-indigo-600 text-white rounded-full font-bold hover:bg-indigo-700 transition-colors"
+                >
+                    Return to Tool
+                </button>
+            </div>
+        </div>
+      )}
+
       <div className="max-w-6xl mx-auto space-y-6">
         
         {/* HEADER */}
@@ -302,46 +299,44 @@ const App = () => {
             </h1>
             <p className="text-sm text-gray-500">Practice tool for Hypothesis Testing for Variance</p>
           </div>
-          <div className="text-sm text-gray-400">df = {df}</div>
+          <div className="text-sm font-mono text-indigo-800 bg-indigo-50 px-3 py-1.5 rounded-lg border border-indigo-100 shadow-sm">
+            df = n - 1 = {df}
+          </div>
         </div>
 
-        {/* CRITICAL VALUES & AREAS */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="bg-cyan-100 p-3 rounded-xl border border-cyan-200 shadow-sm flex flex-col items-center">
-                <span className="text-cyan-800 font-bold text-sm mb-1 uppercase tracking-wider">Left CV</span>
-                <input type="number" inputMode="decimal" value={cvLeft} placeholder="None" onChange={(e) => updateFromCvLeft(e.target.value)}
-                    className={`w-full text-center p-2 rounded-lg border-cyan-300 outline-none font-mono text-lg bg-white/80 ${noSpinClass}`} />
+        {/* TOP SECTION: CVs and GRAPH */}
+        <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex flex-col gap-3 w-full md:w-48 shrink-0">
+                <div className="bg-cyan-100 p-3 rounded-xl border border-cyan-200 shadow-sm flex flex-col items-center">
+                    <span className="text-cyan-800 font-bold text-[10px] mb-1 uppercase tracking-wider">Left CV</span>
+                    <input type="number" inputMode="decimal" value={cvLeft} placeholder="None" onChange={(e) => updateFromCvLeft(e.target.value)}
+                        className={`w-full text-center p-1 rounded border-cyan-300 outline-none font-mono text-sm bg-white/80 ${noSpinClass}`} />
+                    <span className="text-cyan-800 font-bold text-[10px] mt-2 mb-1 uppercase tracking-wider">Left Area (α)</span>
+                    <input type="number" inputMode="decimal" step="0.0001" value={areaLeft} placeholder="None" onChange={(e) => updateFromAreaLeft(e.target.value)}
+                        className={`w-full text-center p-1 rounded border-cyan-300 outline-none font-mono text-sm bg-white/80 ${noSpinClass}`} />
+                </div>
+                <div className="bg-pink-100 p-3 rounded-xl border border-pink-200 shadow-sm flex flex-col items-center">
+                    <span className="text-pink-800 font-bold text-[10px] mb-1 uppercase tracking-wider">Right CV</span>
+                    <input type="number" inputMode="decimal" value={cvRight} placeholder="None" onChange={(e) => updateFromCvRight(e.target.value)}
+                        className={`w-full text-center p-1 rounded border-pink-300 outline-none font-mono text-sm bg-white/80 ${noSpinClass}`} />
+                    <span className="text-pink-800 font-bold text-[10px] mt-2 mb-1 uppercase tracking-wider">Right Area (α)</span>
+                    <input type="number" inputMode="decimal" step="0.0001" value={areaRight} placeholder="None" onChange={(e) => updateFromAreaRight(e.target.value)}
+                        className={`w-full text-center p-1 rounded border-pink-300 outline-none font-mono text-sm bg-white/80 ${noSpinClass}`} />
+                </div>
             </div>
-            <div className="bg-cyan-100 p-3 rounded-xl border border-cyan-200 shadow-sm flex flex-col items-center">
-                <span className="text-cyan-800 font-bold text-sm mb-1 uppercase tracking-wider">Left Area (α)</span>
-                <input type="number" inputMode="decimal" step="0.0001" value={areaLeft} placeholder="None" onChange={(e) => updateFromAreaLeft(e.target.value)}
-                    className={`w-full text-center p-2 rounded-lg border-cyan-300 outline-none font-mono text-lg bg-white/80 ${noSpinClass}`} />
-            </div>
-            <div className="bg-pink-100 p-3 rounded-xl border border-pink-200 shadow-sm flex flex-col items-center">
-                <span className="text-pink-800 font-bold text-sm mb-1 uppercase tracking-wider">Right CV</span>
-                <input type="number" inputMode="decimal" value={cvRight} placeholder="None" onChange={(e) => updateFromCvRight(e.target.value)}
-                    className={`w-full text-center p-2 rounded-lg border-pink-300 outline-none font-mono text-lg bg-white/80 ${noSpinClass}`} />
-            </div>
-            <div className="bg-pink-100 p-3 rounded-xl border border-pink-200 shadow-sm flex flex-col items-center">
-                <span className="text-pink-800 font-bold text-sm mb-1 uppercase tracking-wider">Right Area (α)</span>
-                <input type="number" inputMode="decimal" step="0.0001" value={areaRight} placeholder="None" onChange={(e) => updateFromAreaRight(e.target.value)}
-                    className={`w-full text-center p-2 rounded-lg border-pink-300 outline-none font-mono text-lg bg-white/80 ${noSpinClass}`} />
-            </div>
-        </div>
 
-        {/* GRAPH */}
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-1 relative overflow-hidden">
-            <canvas ref={canvasRef} width={1000} height={300} className="w-full h-64 md:h-80 object-contain" />
-            {/* Movement of the hint to the top-left */}
-            <div className="absolute top-4 left-4 bg-white/90 p-2 rounded text-xs text-gray-500 border border-gray-200 shadow-sm">
-               Distribution: Chi-Square (df={df})
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-1 relative overflow-hidden flex-1">
+                <canvas ref={canvasRef} width={1000} height={350} className="w-full h-full object-contain" />
+                <div className="absolute top-4 left-4 bg-white/90 p-2 rounded text-xs text-gray-500 border border-gray-200 shadow-sm">
+                </div>
             </div>
+
         </div>
 
         {/* INPUTS GRID */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="bg-white rounded-2xl shadow-md border border-gray-200 p-6 flex flex-col justify-center items-center">
-                <h3 className="text-gray-400 font-bold text-xs uppercase tracking-widest mb-4">Test Statistic Formula</h3>
+                <h3 className="text-oranges-400 font-bold text-xs uppercase tracking-widest mb-4">Test Statistic Formula</h3>
                 <div className="text-2xl md:text-4xl font-serif italic text-gray-800 mb-2">
                     χ² = <span className="inline-block align-middle text-center">
                         <span className="block border-b-2 border-gray-800 px-1">(n-1)s²</span>
@@ -381,59 +376,61 @@ const App = () => {
                 </div>
             </div>
 
-            {/* HYPOTHESIS SECTION */}
-            <div className="bg-white rounded-2xl shadow-md border border-gray-200 p-6 space-y-6">
+            <div className="bg-white rounded-2xl shadow-md border border-gray-200 p-6 space-y-4 flex flex-col">
                 <h3 className="text-gray-400 font-bold text-xs uppercase tracking-widest mb-2">Hypothesis</h3>
-                
                 {[ { label: 'H₀', val: h0Op, set: setH0Op }, { label: 'H₁', val: h1Op, set: setH1Op } ].map((h, i) => (
                     <div key={i} className="flex items-center gap-3">
                         <label className="text-xl font-serif italic font-bold w-10">{h.label}:</label>
                         <span className="text-2xl font-serif italic text-indigo-600 font-semibold">{inputMode === 'sd' ? 'σ' : 'σ²'}</span>
                         <div className="relative flex-1 group">
-                            <select 
-                                value={h.val} 
-                                onChange={(e) => h.set(e.target.value)}
+                            <select value={h.val} onChange={(e) => h.set(e.target.value)}
                                 className="w-full p-2 text-xl font-mono border-2 border-gray-100 rounded-lg appearance-none bg-gray-50 hover:bg-white focus:border-indigo-300 outline-none cursor-pointer transition-colors text-center"
                             >
-                                <option value="=">=</option>
-                                <option value="≠">≠</option>
-                                <option value=">">&gt;</option>
-                                <option value="<">&lt;</option>
-                                <option value="≥">≥</option>
-                                <option value="≤">≤</option>
+                                <option value="=">=</option><option value="≠">≠</option><option value=">">&gt;</option><option value="<">&lt;</option><option value="≥">≥</option><option value="≤">≤</option>
                             </select>
                             <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                         </div>
-                        <span className="text-xl font-mono text-gray-700 bg-gray-50 px-3 py-2 rounded-lg border-2 border-transparent w-24 text-center">
-                            {sigma || '0'}
-                        </span>
+                        <span className="text-xl font-mono text-gray-700 bg-gray-50 px-3 py-2 rounded-lg border-2 border-transparent w-24 text-center">{sigma || '0'}</span>
                     </div>
                 ))}
-
-                <div className="text-[10px] text-gray-400 text-center uppercase tracking-widest pt-2 border-t border-gray-100">
-                    Formulate a null and alternate hypothesis
+                <div className="text-[10px] text-gray-400 text-center uppercase tracking-widest pt-2 border-t border-gray-100">Formulate a null and alternate hypothesis</div>
+                <div className="flex flex-col gap-2 mt-auto">
+                    <span className="text-[10px] text-gray-400 font-bold uppercase text-center tracking-widest">Final Conclusion</span>
+                    <div className="flex bg-gray-100 p-1 rounded-xl border border-gray-200">
+                        <button onClick={() => setDecision('reject')} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${decision === 'reject' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-400 hover:text-gray-600'}`}>Reject H₀</button>
+                        <button onClick={() => setDecision('fail')} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${decision === 'fail' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-400 hover:text-gray-600'}`}>Fail to Reject H₀</button>
+                    </div>
                 </div>
             </div>
         </div>
 
-        {/* PROBLEM STATEMENT */}
+        {/* PROBLEM STATEMENT ROW WITH SUBMIT BUTTON */}
         {selectedProblem && (
-          <div className="bg-indigo-100 rounded-2xl p-6 border border-indigo-200 shadow-sm">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="px-2 py-1 bg-indigo-200 text-indigo-700 text-[10px] font-bold uppercase rounded-md">
-                  {selectedProblem.field}
-                </span>
-                <h3 className="text-indigo-800 font-bold flex items-center gap-2">
-                    <Info className="w-4 h-4" />
-                    Problem Statement
-                </h3>
+          <div className="flex flex-col md:flex-row gap-4 items-stretch">
+              {/* Problem Card */}
+              <div className="bg-indigo-100 rounded-2xl p-6 border border-indigo-200 shadow-sm flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="px-2 py-1 bg-indigo-200 text-indigo-700 text-[10px] font-bold uppercase rounded-md">{selectedProblem.field}</span>
+                    <h3 className="text-indigo-800 font-bold flex items-center gap-2"><Info className="w-4 h-4" />Problem Statement</h3>
+                  </div>
+                  <p className="text-indigo-900 leading-relaxed mb-4">{selectedProblem.text}</p>
+                  <div className="pt-4 border-t border-indigo-200 text-indigo-800 font-medium italic">{selectedProblem.task}</div>
               </div>
-              <p className="text-indigo-900 leading-relaxed mb-4">
-                  {selectedProblem.text}
-              </p>
-              <div className="pt-4 border-t border-indigo-200 text-indigo-800 font-medium italic">
-                  {selectedProblem.task}
-              </div>
+
+              {/* Submit Button (Tall, narrow, rotated) */}
+              <button 
+                onClick={() => setShowSubmitModal(true)}
+                disabled={!decision}
+                className={`w-12 md:w-16 rounded-2xl flex items-center justify-center transition-all duration-300 transform group ${
+                    decision 
+                    ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg cursor-pointer active:scale-95' 
+                    : 'bg-gray-200 text-gray-400 cursor-not-allowed border-2 border-dashed border-gray-300'
+                }`}
+              >
+                  <span className="whitespace-nowrap -rotate-90 font-black tracking-[0.2em] text-lg uppercase flex items-center gap-2">
+                      Submit 
+                  </span>
+              </button>
           </div>
         )}
 
