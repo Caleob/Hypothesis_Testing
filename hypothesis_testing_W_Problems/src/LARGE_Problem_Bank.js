@@ -1,0 +1,222 @@
+const PROBLEM_BANK = [
+  {
+    field: "Manufacturing",
+    text: "A precision parts manufacturer claims the standard deviation of rod diameters is 0.02 mm. A quality inspector suspects the variability is actually higher. They take a random sample of 25 rods and find a sample standard deviation of 0.028 mm.",
+    task: "Conduct a hypothesis test at α = 0.05 to determine if the population standard deviation is greater than 0.02 mm.",
+    tails: "right",
+    testStatType: "chi-squared",
+    expectedTestStat: 47.04,
+    expectedH0: { op: "=", val: 0.02 },
+    expectedHa: { op: ">", val: 0.02 },
+    expectedDecision: "reject"
+  },
+  {
+    field: "Biology",
+    text: "A biologist studying honey bee wing lengths notes that previous research cites a variance of 0.16 mm². She suspects environmental factors have increased this variance. She measures a sample of 40 bees and calculates a sample variance of 0.25 mm².",
+    task: "Test the claim that the population variance is greater than 0.16 mm² at the 0.01 significance level.",
+    tails: "right",
+    testStatType: "chi-squared",
+    expectedTestStat: 60.9375,
+    expectedH0: { op: "=", val: 0.16 },
+    expectedHa: { op: ">", val: 0.16 },
+    expectedDecision: "fail"
+  },
+  {
+    field: "Medicine",
+    text: "A pharmaceutical company produces 500mg tablets. They state that the standard deviation of the active ingredient is 4 mg. A regulator tests a sample of 31 tablets and finds a sample standard deviation of 4.8 mg.",
+    task: "Use a significance level of 0.05 to determine if the dosage is more variable than the company claims.",
+    tails: "right",
+    testStatType: "chi-squared",
+    expectedTestStat: 43.2,
+    expectedH0: { op: "=", val: 4 },
+    expectedHa: { op: ">", val: 4 },
+    expectedDecision: "fail"
+  },
+  {
+    field: "Engineering",
+    text: "An engineering firm specifies that the variance in the tensile strength of steel cables must be 100 psi². A random test of 15 cables results in a sample variance of 165 psi².",
+    task: "Determine if there is enough evidence at α = 0.05 to conclude the variance exceeds 100 psi².",
+    tails: "right",
+    testStatType: "chi-squared",
+    expectedTestStat: 23.1,
+    expectedH0: { op: "=", val: 100 },
+    expectedHa: { op: ">", val: 100 },
+    expectedDecision: "fail"
+  },
+  {
+    field: "Food Science",
+    text: "A bottling plant claims the variance in the volume of soda per bottle is 0.04 oz². A consumer group suspects the filling machine is inconsistent and tests 20 bottles, finding a sample variance of 0.08 oz².",
+    task: "Perform a hypothesis test to see if the population variance is greater than 0.04 at α = 0.10.",
+    tails: "right",
+    testStatType: "chi-squared",
+    expectedTestStat: 38.0,
+    expectedH0: { op: "=", val: 0.04 },
+    expectedHa: { op: ">", val: 0.04 },
+    expectedDecision: "reject"
+  },
+  {
+    field: "Sports Science",
+    text: "A trainer claims the standard deviation of reaction times for elite sprinters is 0.012 seconds. A researcher measures 16 sprinters and finds a sample standard deviation of 0.018 seconds.",
+    task: "Test the claim that the standard deviation is actually higher than 0.012 seconds using α = 0.05.",
+    tails: "right",
+    testStatType: "chi-squared",
+    expectedTestStat: 33.75,
+    expectedH0: { op: "=", val: 0.012 },
+    expectedHa: { op: ">", val: 0.012 },
+    expectedDecision: "reject"
+  },
+  {
+    field: "Environmental Science",
+    text: "Hydrologists claim the standard deviation of pH levels in a specific lake is 0.15. After a heavy rainfall, they sample 24 locations and find a sample standard deviation of 0.22.",
+    task: "Test if the rainfall increased the variability of pH levels at a 5% significance level.",
+    tails: "right",
+    testStatType: "chi-squared",
+    expectedTestStat: 49.4756,
+    expectedH0: { op: "=", val: 0.15 },
+    expectedHa: { op: ">", val: 0.15 },
+    expectedDecision: "reject"
+  },
+  {
+    field: "Aeronautics",
+    text: "A jet engine nozzle is designed for a fuel flow variance of 0.09 (L/s)². Engineers test a batch of 12 nozzles and find a sample variance of 0.18 (L/s)².",
+    task: "Determine if the manufacturing process has more variability than the design spec allows at α = 0.01.",
+    tails: "right",
+    testStatType: "chi-squared",
+    expectedTestStat: 22.0,
+    expectedH0: { op: "=", val: 0.09 },
+    expectedHa: { op: ">", val: 0.09 },
+    expectedDecision: "fail"
+  },
+  {
+    field: "Pharmacology",
+    text: "A researcher expects the standard deviation of heart rate response to a new drug to be 10 bpm. In a clinical trial of 50 patients, the sample standard deviation is found to be 12 bpm.",
+    task: "Test the hypothesis that the population standard deviation is greater than 10 bpm at α = 0.05.",
+    tails: "right",
+    testStatType: "chi-squared",
+    expectedTestStat: 70.56,
+    expectedH0: { op: "=", val: 10 },
+    expectedHa: { op: ">", val: 10 },
+    expectedDecision: "reject"
+  },
+  {
+    field: "Agriculture",
+    text: "An organic farm claims the variance in the weight of their premium oranges is 16 g². A grocer tests a sample of 28 oranges and finds a sample variance of 29 g².",
+    task: "Test the claim that the population variance is greater than 16 g² at the 0.05 significance level.",
+    tails: "right",
+    testStatType: "chi-squared",
+    expectedTestStat: 48.9375,
+    expectedH0: { op: "=", val: 16 },
+    expectedHa: { op: ">", val: 16 },
+    expectedDecision: "reject"
+  },
+  {
+    field: "Quality Control",
+    text: "A new automated dispensing system is supposed to have a standard deviation of 0.15 mL, but technicians suspect the machine may be 'too perfect'—possibly stuck or miscalibrated. They sample 30 dispensed amounts and find a sample standard deviation of 0.12 mL.",
+    task: "Test at α = 0.05 whether the population standard deviation is less than 0.15 mL.",
+    tails: "left",
+    testStatType: "chi-squared",
+    expectedTestStat: 18.56,
+    expectedH0: { op: "=", val: 0.15 },
+    expectedHa: { op: "<", val: 0.15 },
+    expectedDecision: "fail"
+  },
+  {
+    field: "Forensic Accounting",
+    text: "An auditor reviews expense reports from a department where historical variance in daily expenses is $2,500. The current period shows suspiciously consistent values with a sample variance of only $900 across 25 days, suggesting possible fabrication.",
+    task: "Determine if there is evidence at α = 0.01 that the variance is less than $2,500.",
+    tails: "left",
+    testStatType: "chi-squared",
+    expectedTestStat: 8.64,
+    expectedH0: { op: "=", val: 2500 },
+    expectedHa: { op: "<", val: 2500 },
+    expectedDecision: "reject"
+  },
+  {
+    field: "Psychology",
+    text: "A cognitive test is designed to have a standard deviation of 15 points to ensure adequate discrimination between ability levels. A researcher administers the test to 41 participants and obtains a sample standard deviation of 18.5 points.",
+    task: "Test whether the population standard deviation differs from 15 points using α = 0.10.",
+    tails: "both",
+    testStatType: "chi-squared",
+    expectedTestStat: 60.8067,
+    expectedH0: { op: "=", val: 15 },
+    expectedHa: { op: "≠", val: 15 },
+    expectedDecision: "reject"
+  },
+  {
+    field: "Environmental Monitoring",
+    text: "Temperature sensors in a climate-controlled lab should have a measurement variance of 0.25°C². A technician notices all recent readings are nearly identical and suspects sensor malfunction. Testing 18 readings yields a sample variance of 0.09°C².",
+    task: "At α = 0.05, test if the population variance is less than 0.25°C².",
+    tails: "left",
+    testStatType: "chi-squared",
+    expectedTestStat: 6.12,
+    expectedH0: { op: "=", val: 0.25 },
+    expectedHa: { op: "<", val: 0.25 },
+    expectedDecision: "reject"
+  },
+  {
+    field: "Manufacturing",
+    text: "A machine shop contracts require that the variance in shaft thickness must be exactly 0.0004 inches² (not more, not less) to ensure proper fit. A sample of 22 shafts yields a variance of 0.0009 inches².",
+    task: "Test at α = 0.05 whether the population variance differs from the specification of 0.0004.",
+    tails: "both",
+    testStatType: "chi-squared",
+    expectedTestStat: 47.25,
+    expectedH0: { op: "=", val: 0.0004 },
+    expectedHa: { op: "≠", val: 0.0004 },
+    expectedDecision: "reject"
+  },
+  {
+    field: "Education",
+    text: "Standardized test scores in a district historically have a standard deviation of 22 points. After implementing a controversial tracking system, a sample of 35 students shows a standard deviation of 14 points, raising concerns about reduced diversity of outcomes.",
+    task: "Determine if the standard deviation has decreased from 22 points at α = 0.05.",
+    tails: "left",
+    testStatType: "chi-squared",
+    expectedTestStat: 13.7289,
+    expectedH0: { op: "=", val: 22 },
+    expectedHa: { op: "<", val: 22 },
+    expectedDecision: "reject"
+  },
+  {
+    field: "Financial Trading",
+    text: "A trading algorithm is designed to maintain a variance in daily returns of $400. Compliance officers test 45 trading days and find a sample variance of $625, concerned the algorithm may be taking excessive risks.",
+    task: "Test whether the population variance differs from $400 at α = 0.10.",
+    tails: "both",
+    testStatType: "chi-squared",
+    expectedTestStat: 68.75,
+    expectedH0: { op: "=", val: 400 },
+    expectedHa: { op: "≠", val: 400 },
+    expectedDecision: "reject"
+  },
+  {
+    field: "Clinical Research",
+    text: "Blood glucose monitors should have a measurement standard deviation of 5 mg/dL. A medical device company tests a new model on 20 samples and finds a standard deviation of 3.2 mg/dL, suspecting the device may be artificially smoothing data.",
+    task: "At α = 0.05, test if the population standard deviation is less than 5 mg/dL.",
+    tails: "left",
+    testStatType: "chi-squared",
+    expectedTestStat: 7.7824,
+    expectedH0: { op: "=", val: 5 },
+    expectedHa: { op: "<", val: 5 },
+    expectedDecision: "reject"
+  },
+  {
+    field: "Hydrology",
+    text: "Stream flow measurements at a gauging station have historically shown a variance of 144 (m³/s)². After installing a new measurement system, 26 readings show a sample variance of 89 (m³/s)², and engineers worry the sensors may be malfunctioning.",
+    task: "Test whether the variance differs from 144 at the 0.05 significance level.",
+    tails: "both",
+    testStatType: "chi-squared",
+    expectedTestStat: 15.4514,
+    expectedH0: { op: "=", val: 144 },
+    expectedHa: { op: "≠", val: 144 },
+    expectedDecision: "reject"
+  },
+  {
+    field: "Market Research",
+    text: "Customer satisfaction scores typically have a standard deviation of 12 points. After a new product launch, a company surveys 35 customers and finds a standard deviation of 10 points—unusually low variation that might indicate survey bias or limited product appeal to a narrow demographic.",
+    task: "Test at α = 0.10 whether the population standard deviation is less than 12 points.",
+    tails: "left",
+    testStatType: "chi-squared",
+    expectedTestStat: 23.611,
+    expectedH0: { op: "=", val: 12 },
+    expectedHa: { op: "<", val: 12 },
+    expectedDecision: "fail"
+  }
+];
